@@ -133,9 +133,24 @@ app.post('/api/submit', async (req, res) => {
   const filename = `frame_${timestamp}_${Math.floor(1000 + Math.random() * 9000)}.${ext}`;
 
   try {
-    // Upload binary buffer to Vercel Blob Storage
-    const blob = await put(filename, buffer, { access: 'public' });
-    const fileUrl = blob.url;
+    let fileUrl = '';
+    
+    // Check if Vercel Blob token is available
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Upload binary buffer to Vercel Blob Storage
+      const blob = await put(filename, buffer, { access: 'public' });
+      fileUrl = blob.url;
+      console.log(`[Submission] Cloud saved ${filename} to Vercel Blob`);
+    } else {
+      // Local Fallback: Save file to local uploads directory for local testing
+      const uploadsDir = path.join(__dirname, 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(uploadsDir, filename), buffer);
+      fileUrl = `/uploads/${filename}`;
+      console.log(`[Submission] Saved locally (fallback): ${filename}`);
+    }
     
     // Query autoApprove config
     const configRes = await pool.query("SELECT value FROM config WHERE key = 'autoApprove'");
@@ -148,7 +163,7 @@ app.post('/api/submit', async (req, res) => {
       [filename, fileUrl, status, timestamp]
     );
     
-    console.log(`[Submission] Cloud saved ${filename} as ${status}`);
+    console.log(`[Submission] Database saved ${filename} as ${status}`);
     res.json({
       success: true,
       filename,
@@ -157,7 +172,7 @@ app.post('/api/submit', async (req, res) => {
     });
   } catch (err) {
     console.error('[Submit] Database/Blob upload failed:', err);
-    res.status(500).json({ error: 'Failed to process submission in database mode.' });
+    res.status(500).json({ error: 'Failed to process submission.' });
   }
 });
 
@@ -226,18 +241,32 @@ app.post('/api/reject', async (req, res) => {
     
     const fileUrl = findRes.rows[0].url;
 
-    // Delete binary file from Vercel Blob
-    await del(fileUrl);
+    // Delete binary file
+    if (fileUrl.startsWith('http')) {
+      // Delete from Vercel Blob
+      await del(fileUrl);
+      console.log(`[Reject] Deleted from Vercel Blob: ${fileUrl}`);
+    } else {
+      // Delete local fallback file
+      const localPath = path.join(__dirname, 'uploads', filename);
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+        console.log(`[Reject] Deleted local fallback file: ${localPath}`);
+      }
+    }
 
     // Delete from Postgres database
     await pool.query("DELETE FROM submissions WHERE filename = $1", [filename]);
-    console.log(`[Moderation] Rejected & Deleted ${filename} from Blob & DB.`);
+    console.log(`[Moderation] Rejected & Deleted ${filename} from DB.`);
     res.json({ success: true, filename });
   } catch (err) {
     console.error('[Reject] Failed to delete from DB or Blob:', err);
     res.status(500).json({ error: 'Failed to reject submission.' });
   }
 });
+
+// Serve local fallback uploads directory if running locally
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve other static project files from current workspace directory
 app.use(express.static(__dirname));
