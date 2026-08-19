@@ -790,4 +790,470 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3500);
   }
 
+  /* ==========================================================================
+     SINGLE PAGE APPLICATION ROUTER & CONSOLIDATED LOGIC
+     ========================================================================== */
+
+  // DOM Selectors for SPA elements
+  const floatingNavControl = document.getElementById('floatingNavControl');
+  const navTriggerBtn = document.getElementById('navTriggerBtn');
+  const navMenuItems = document.querySelectorAll('.nav-menu-item');
+  const viewPanels = document.querySelectorAll('.view-panel');
+  
+  // Passcode elements
+  const passcodeModal = document.getElementById('passcodeModal');
+  const closePasscodeBtn = document.getElementById('closePasscodeBtn');
+  const submitPasscodeBtn = document.getElementById('submitPasscodeBtn');
+  const adminPasscodeInput = document.getElementById('adminPasscodeInput');
+  const passcodeError = document.getElementById('passcodeError');
+  
+  // Admin panel elements
+  const autoApproveToggle = document.getElementById('autoApproveToggle');
+  const pendingGrid = document.getElementById('pendingGrid');
+  const approvedGrid = document.getElementById('approvedGrid');
+  const statPending = document.getElementById('statPending');
+  const statApproved = document.getElementById('statApproved');
+  const statTotal = document.getElementById('statTotal');
+  const pendingCount = document.getElementById('pendingCount');
+  const approvedCount = document.getElementById('approvedCount');
+
+  // Live Wall slideshow elements
+  const slideContainer = document.getElementById('slideContainer');
+  const ambientBg = document.getElementById('ambientBg');
+  const liveUrlDisplay = document.getElementById('liveUrlDisplay');
+
+  // State Variables for SPA
+  let isAdminAuthenticated = false;
+  let adminInterval = null;
+  let wallInterval = null;
+  let slideTimer = null;
+  
+  // Slideshow data state
+  let wallApprovedImages = [];
+  let wallCurrentIdx = -1;
+  const wallRotationInterval = 7000;
+
+  // Floating compass navigation toggle click
+  navTriggerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    floatingNavControl.classList.toggle('open');
+  });
+
+  document.addEventListener('click', () => {
+    floatingNavControl.classList.remove('open');
+  });
+
+  // Hash Router
+  function handleRoute() {
+    const hash = window.location.hash || '#generator';
+    
+    // Remove open states
+    floatingNavControl.classList.remove('open');
+
+    // Close camera if active
+    if (typeof stopCamera === 'function') stopCamera();
+
+    if (hash === '#admin') {
+      if (isAdminAuthenticated) {
+        switchView('admin');
+      } else {
+        // Show passcode prompt
+        openPasscodePrompt();
+      }
+    } else if (hash === '#wall') {
+      switchView('wall');
+    } else {
+      // Default to generator
+      switchView('generator');
+    }
+  }
+
+  window.addEventListener('hashchange', handleRoute);
+  
+  // Trigger router on load
+  handleRoute();
+
+  // Switch Active View Panel helper
+  function switchView(viewName) {
+    // Deactivate all panels
+    viewPanels.forEach(panel => panel.classList.remove('active'));
+    navMenuItems.forEach(item => item.classList.remove('active'));
+
+    // Activate selected panel
+    const targetPanel = document.getElementById(`view-${viewName}`);
+    if (targetPanel) targetPanel.classList.add('active');
+
+    // Highlight menu selection
+    const targetMenu = document.querySelector(`.nav-menu-item[data-view="${viewName}"]`);
+    if (targetMenu) targetMenu.classList.add('active');
+
+    // Clean up all running intervals to save resources
+    stopAdminPolling();
+    stopWallCarousel();
+
+    // Boot view specific loops
+    if (viewName === 'admin') {
+      startAdminPolling();
+    } else if (viewName === 'wall') {
+      startWallCarousel();
+    }
+  }
+
+  /* --- Passcode Operations --- */
+  function openPasscodePrompt() {
+    passcodeModal.classList.add('active');
+    adminPasscodeInput.value = '';
+    passcodeError.classList.remove('show');
+    adminPasscodeInput.focus();
+  }
+
+  function closePasscodePrompt() {
+    passcodeModal.classList.remove('active');
+    // If not authenticated, force hash back to generator
+    if (!isAdminAuthenticated) {
+      window.location.hash = '#generator';
+    }
+  }
+
+  closePasscodeBtn.addEventListener('click', closePasscodePrompt);
+  
+  submitPasscodeBtn.addEventListener('click', verifyAdminPasscode);
+  adminPasscodeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') verifyAdminPasscode();
+  });
+
+  function verifyAdminPasscode() {
+    const input = adminPasscodeInput.value.trim();
+    // Default moderator passcode
+    if (input === 'htd3') {
+      isAdminAuthenticated = true;
+      passcodeModal.classList.remove('active');
+      switchView('admin');
+      showToast("Access Unlocked. Moderator session active.");
+    } else {
+      passcodeError.classList.add('show');
+      adminPasscodeInput.value = '';
+      adminPasscodeInput.focus();
+    }
+  }
+
+  /* --- Moderator Admin Panel Code --- */
+  let adminState = {
+    pendingList: [],
+    approvedList: []
+  };
+
+  async function fetchConfig() {
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      autoApproveToggle.checked = data.autoApprove;
+    } catch (err) {
+      console.error('Failed to fetch config:', err);
+    }
+  }
+
+  autoApproveToggle.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoApprove: val })
+      });
+      const data = await res.json();
+      showToast(`Auto-Approve set to ${data.autoApprove ? 'ENABLED' : 'DISABLED'}`);
+    } catch (err) {
+      console.error('Failed to update config:', err);
+      autoApproveToggle.checked = !val;
+      showToast('Failed to save settings.', true);
+    }
+  });
+
+  function formatTime(timestamp) {
+    const date = new Date(parseInt(timestamp));
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  async function refreshAdminFeeds() {
+    try {
+      const [resPending, resApproved] = await Promise.all([
+        fetch('/api/pending'),
+        fetch('/api/approved')
+      ]);
+      const pendingData = await resPending.json();
+      const approvedData = await resApproved.json();
+
+      adminState.pendingList = pendingData.images;
+      adminState.approvedList = approvedData.images;
+
+      // Update metrics
+      const pCount = adminState.pendingList.length;
+      const aCount = adminState.approvedList.length;
+      const total = pCount + aCount;
+
+      statPending.textContent = pCount;
+      statApproved.textContent = aCount;
+      statTotal.textContent = total;
+
+      pendingCount.textContent = `${pCount} PENDING`;
+      approvedCount.textContent = `${aCount} LIVE`;
+
+      renderAdminPending();
+      renderAdminApproved();
+    } catch (err) {
+      console.error('Failed to retrieve feeds:', err);
+    }
+  }
+
+  function renderAdminPending() {
+    if (adminState.pendingList.length === 0) {
+      pendingGrid.innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-thumbs-up"></i>
+          <p>No pending submissions. All cleared!</p>
+        </div>
+      `;
+      return;
+    }
+
+    pendingGrid.innerHTML = adminState.pendingList.map(img => `
+      <div class="frame-card">
+        <div class="card-preview-wrapper">
+          <img src="${img.url}" alt="Pending Photo">
+        </div>
+        <div class="card-info">
+          <div class="card-meta">
+            <span>ID: ${img.filename.split('_')[2]?.substring(0,4) || 'N/A'}</span>
+            <span>${formatTime(img.timestamp)}</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-approve" onclick="approveFrame('${img.filename}')">
+            <i class="fa-solid fa-check"></i> APPROVE
+          </button>
+          <a href="${img.url}" download="${img.filename}" class="btn-download-admin" title="Download Poster">
+            <i class="fa-solid fa-download"></i>
+          </a>
+          <button class="btn-reject" onclick="rejectFrame('${img.filename}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderAdminApproved() {
+    if (adminState.approvedList.length === 0) {
+      approvedGrid.innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-image"></i>
+          <p>No photos approved yet. Approved frames show up here.</p>
+        </div>
+      `;
+      return;
+    }
+
+    approvedGrid.innerHTML = adminState.approvedList.map(img => `
+      <div class="frame-card">
+        <div class="card-preview-wrapper">
+          <img src="${img.url}" alt="Approved Photo">
+        </div>
+        <div class="card-info">
+          <div class="card-meta">
+            <span>ID: ${img.filename.split('_')[2]?.substring(0,4) || 'N/A'}</span>
+            <span>${formatTime(img.timestamp)}</span>
+          </div>
+        </div>
+        <div class="card-actions" style="gap: 8px;">
+          <button class="btn-revoke" onclick="rejectFrame('${img.filename}', true)" style="flex: 1;">
+            <i class="fa-solid fa-circle-minus"></i> REVOKE POST
+          </button>
+          <a href="${img.url}" download="${img.filename}" class="btn-download-admin" title="Download Poster">
+            <i class="fa-solid fa-download"></i>
+          </a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Global methods for button hooks
+  window.approveFrame = async (filename) => {
+    try {
+      const res = await fetch('/api/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      if (res.ok) {
+        showToast('Frame approved and posted to Story Wall!');
+        refreshAdminFeeds();
+      } else {
+        showToast('Failed to approve submission.', true);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to approve submission.', true);
+    }
+  };
+
+  window.rejectFrame = async (filename, isApproved = false) => {
+    const confirmMsg = isApproved 
+      ? 'Are you sure you want to remove this image from the Story Wall? This deletes the file permanently.'
+      : 'Are you sure you want to delete this pending submission?';
+      
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch('/api/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      if (res.ok) {
+        showToast(isApproved ? 'Post revoked and deleted.' : 'Submission deleted.');
+        refreshAdminFeeds();
+      } else {
+        showToast('Failed to delete submission.', true);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete submission.', true);
+    }
+  };
+
+  function startAdminPolling() {
+    fetchConfig();
+    refreshAdminFeeds();
+    adminInterval = setInterval(refreshAdminFeeds, 3000);
+  }
+
+  function stopAdminPolling() {
+    if (adminInterval) {
+      clearInterval(adminInterval);
+      adminInterval = null;
+    }
+  }
+
+  /* --- Live Wall Slideshow Code --- */
+  // Configure instruction URL dynamically based on address bar location
+  const wallBaseUrl = window.location.origin;
+  liveUrlDisplay.textContent = wallBaseUrl.replace(/^https?:\/\//, '');
+
+  async function pollApprovedWallFeeds() {
+    try {
+      const res = await fetch('/api/approved');
+      const data = await res.json();
+      const newImages = data.images;
+
+      // Check differences in lists
+      let listChanged = false;
+      if (wallApprovedImages.length !== newImages.length) {
+        listChanged = true;
+      } else {
+        for (let i = 0; i < newImages.length; i++) {
+          if (wallApprovedImages[i].filename !== newImages[i].filename) {
+            listChanged = true;
+            break;
+          }
+        }
+      }
+
+      if (listChanged) {
+        wallApprovedImages = newImages;
+        console.log(`[Story Wall] Updated slides count: ${wallApprovedImages.length}`);
+        
+        if (wallApprovedImages.length > 0) {
+          if (wallCurrentIdx === -1) {
+            wallCurrentIdx = 0;
+            displayActiveWallSlide();
+            startWallSlideshowTimer();
+          }
+        } else {
+          wallCurrentIdx = -1;
+          stopWallSlideshowTimer();
+          renderWallEmptyState();
+        }
+      }
+    } catch (err) {
+      console.error('Failed to pull wall approved items:', err);
+    }
+  }
+
+  function renderWallEmptyState() {
+    slideContainer.innerHTML = `
+      <div class="slide active">
+        <div class="empty-wall-slide">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <h3>The Wall is Warming Up</h3>
+          <p>Scanning the network for customized participant badges. Open the generator, insert your selfie, and push it to the wall!</p>
+        </div>
+      </div>
+    `;
+    ambientBg.style.backgroundImage = 'none';
+  }
+
+  function displayActiveWallSlide() {
+    if (wallApprovedImages.length === 0 || wallCurrentIdx < 0) return;
+    if (wallCurrentIdx >= wallApprovedImages.length) wallCurrentIdx = 0;
+
+    const imgData = wallApprovedImages[wallCurrentIdx];
+    const nextUrl = imgData.url;
+
+    // Create crossfade node
+    const newSlide = document.createElement('div');
+    newSlide.className = 'slide';
+    newSlide.innerHTML = `<img src="${nextUrl}" alt="Hackathon Participant">`;
+
+    // Preload
+    const imgPreload = new Image();
+    imgPreload.onload = () => {
+      // Remove old slide nodes
+      const oldSlides = slideContainer.querySelectorAll('.slide');
+      oldSlides.forEach(slide => {
+        slide.classList.remove('active');
+        setTimeout(() => slide.remove(), 1200);
+      });
+
+      slideContainer.appendChild(newSlide);
+      newSlide.getBoundingClientRect(); // force layout repaint
+      newSlide.classList.add('active');
+
+      // Blur backdrop
+      ambientBg.style.backgroundImage = `url(${nextUrl})`;
+    };
+    imgPreload.src = nextUrl;
+  }
+
+  function rotateWallSlideNext() {
+    if (wallApprovedImages.length <= 1) return;
+    wallCurrentIdx = (wallCurrentIdx + 1) % wallApprovedImages.length;
+    displayActiveWallSlide();
+  }
+
+  function startWallSlideshowTimer() {
+    if (slideTimer) clearInterval(slideTimer);
+    slideTimer = setInterval(rotateWallSlideNext, wallRotationInterval);
+  }
+
+  function stopWallSlideshowTimer() {
+    if (slideTimer) {
+      clearInterval(slideTimer);
+      slideTimer = null;
+    }
+  }
+
+  function startWallCarousel() {
+    pollApprovedWallFeeds();
+    wallInterval = setInterval(pollApprovedWallFeeds, 8000);
+  }
+
+  function stopWallCarousel() {
+    stopWallSlideshowTimer();
+    if (wallInterval) {
+      clearInterval(wallInterval);
+      wallInterval = null;
+    }
+  }
+
 });
