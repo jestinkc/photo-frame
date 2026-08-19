@@ -287,6 +287,17 @@ document.addEventListener('DOMContentLoaded', () => {
   userSubInput.addEventListener('input', renderCanvas);
   applyFrameToggle.addEventListener('change', (e) => {
     applyEventFrame = e.target.checked;
+    
+    // Update labels dynamically
+    const downloadSpan = downloadBtn.querySelector('span');
+    if (downloadSpan) {
+      downloadSpan.textContent = applyEventFrame ? 'Download Frame' : 'Download Photo';
+    }
+    const submitSpan = submitStoryBtn.querySelector('span');
+    if (submitSpan) {
+      submitSpan.textContent = applyEventFrame ? 'Submit to Live Story' : 'Submit Photo to Wall';
+    }
+
     renderCanvas();
   });
 
@@ -697,13 +708,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Clean filename based on name input
     const cleanName = (userNameInput.value.trim() || 'Participant').replace(/[^a-zA-Z0-9]/g, '_');
-    link.download = `HackTillDawn3_${cleanName}_Frame.png`;
+    link.download = applyEventFrame 
+      ? `HackTillDawn3_${cleanName}_Frame.png` 
+      : `HackTillDawn3_${cleanName}_Photo.png`;
     link.href = dataURL;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    showToast("Frame downloaded successfully!");
+    showToast(applyEventFrame ? "Frame downloaded successfully!" : "Photo downloaded successfully!");
   });
 
   /* ==========================================================================
@@ -724,6 +737,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       cameraVideo.srcObject = localStream;
+      
+      // Hide scanner/guide if frame is disabled to allow normal photo capturing
+      const guide = cameraModal.querySelector('.camera-frame-guide');
+      const scanner = cameraModal.querySelector('.camera-scanner-line');
+      if (guide) guide.style.display = applyEventFrame ? 'block' : 'none';
+      if (scanner) scanner.style.display = applyEventFrame ? 'block' : 'none';
+      
       cameraModal.classList.add('active');
     } catch (err) {
       console.error('Camera Access Error:', err);
