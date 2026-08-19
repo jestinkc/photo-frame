@@ -193,6 +193,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Touch and Gesture State
+  const touchModeBtn = document.getElementById('touchModeBtn');
+  const touchModeLabel = document.getElementById('touchModeLabel');
+  let touchMode = 'scroll'; // 'scroll' (default: 1 finger scrolls page) | 'pan' (1 finger drags photo)
+
+  if (touchModeBtn) {
+    touchModeBtn.addEventListener('click', () => {
+      touchMode = touchMode === 'scroll' ? 'pan' : 'scroll';
+      if (touchMode === 'pan') {
+        touchModeBtn.classList.add('pan-active');
+        touchModeBtn.querySelector('i').className = 'fa-solid fa-hand';
+        touchModeLabel.textContent = 'Pan Mode';
+        canvasWrapper.classList.add('pan-mode-active');
+        showToast("Pan Mode: 1 finger moves photo inside frame");
+      } else {
+        touchModeBtn.classList.remove('pan-active');
+        touchModeBtn.querySelector('i').className = 'fa-solid fa-arrows-up-down';
+        touchModeLabel.textContent = 'Scroll Mode';
+        canvasWrapper.classList.remove('pan-mode-active');
+        showToast("Scroll Mode: Scroll down freely to edit details");
+      }
+    });
+  }
+
   let touchState = {
     mode: 'none', // 'drag' | 'pinch'
     initialDist: 0,
@@ -203,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initialYOffset: 0
   };
 
-  // Pointer Drag Handlers (Mouse)
+  // Pointer Drag Handlers (Mouse on Desktop)
   canvasWrapper.addEventListener('mousedown', (e) => {
     if (!userImg) return;
     isDragging = true;
@@ -245,18 +268,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Advanced Mobile Touch Gestures (Single Drag & Multi-Touch Pinch-to-Zoom)
+  // Advanced Mobile Touch Gestures (Allows Natural Page Scroll + Multi-Touch Pinch-to-Zoom)
   canvasWrapper.addEventListener('touchstart', (e) => {
-    if (!userImg) return;
-    e.preventDefault();
+    if (!userImg) return; // If no photo loaded, all touches scroll page naturally
 
     if (e.touches.length === 1) {
-      touchState.mode = 'drag';
-      isDragging = true;
-      const coords = getCanvasCoords(e);
-      startX = coords.x - imgState.xOffset;
-      startY = coords.y - imgState.yOffset;
+      if (touchMode === 'pan') {
+        // In Pan mode, 1 finger moves photo
+        e.preventDefault();
+        touchState.mode = 'drag';
+        isDragging = true;
+        const coords = getCanvasCoords(e);
+        startX = coords.x - imgState.xOffset;
+        startY = coords.y - imgState.yOffset;
+      } else {
+        // In Scroll mode, 1 finger scrolls the page naturally
+        touchState.mode = 'none';
+        isDragging = false;
+      }
     } else if (e.touches.length === 2) {
+      // 2 fingers ALWAYS zooms & pans photo without page bouncing
+      e.preventDefault();
       touchState.mode = 'pinch';
       isDragging = false;
       touchState.initialDist = getTouchDistance(e.touches);
@@ -271,14 +303,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   canvasWrapper.addEventListener('touchmove', (e) => {
     if (!userImg) return;
-    e.preventDefault();
 
-    if (e.touches.length === 1 && touchState.mode === 'drag') {
+    if (e.touches.length === 1 && touchState.mode === 'drag' && touchMode === 'pan') {
+      e.preventDefault();
       const coords = getCanvasCoords(e);
       imgState.xOffset = coords.x - startX;
       imgState.yOffset = coords.y - startY;
       renderCanvas();
     } else if (e.touches.length === 2 && touchState.mode === 'pinch' && touchState.initialDist > 0) {
+      e.preventDefault();
       const currentDist = getTouchDistance(e.touches);
       const scaleFactor = currentDist / touchState.initialDist;
       let newScale = touchState.initialScale * scaleFactor;
@@ -299,13 +332,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.touches.length === 0) {
       touchState.mode = 'none';
       isDragging = false;
-    } else if (e.touches.length === 1) {
-      // Transition from pinch to single-finger drag seamlessly
+    } else if (e.touches.length === 1 && touchMode === 'pan') {
       touchState.mode = 'drag';
       isDragging = true;
       const coords = getCanvasCoords(e);
       startX = coords.x - imgState.xOffset;
       startY = coords.y - imgState.yOffset;
+    } else {
+      touchState.mode = 'none';
+      isDragging = false;
     }
   }, { passive: false });
 
@@ -361,7 +396,54 @@ document.addEventListener('DOMContentLoaded', () => {
   resetBtn.addEventListener('click', () => {
     resetTransform();
     renderCanvas();
+    showToast("Alignment and zoom reset to default");
   });
+
+  // Pan Position Nudge Controls (Mobile Precision)
+  const panUpBtn = document.getElementById('panUpBtn');
+  const panDownBtn = document.getElementById('panDownBtn');
+  const panLeftBtn = document.getElementById('panLeftBtn');
+  const panRightBtn = document.getElementById('panRightBtn');
+  const panCenterBtn = document.getElementById('panCenterBtn');
+  const NUDGE_STEP = 25;
+
+  if (panUpBtn) {
+    panUpBtn.addEventListener('click', () => {
+      if (!userImg) return;
+      imgState.yOffset -= NUDGE_STEP;
+      renderCanvas();
+    });
+  }
+  if (panDownBtn) {
+    panDownBtn.addEventListener('click', () => {
+      if (!userImg) return;
+      imgState.yOffset += NUDGE_STEP;
+      renderCanvas();
+    });
+  }
+  if (panLeftBtn) {
+    panLeftBtn.addEventListener('click', () => {
+      if (!userImg) return;
+      imgState.xOffset -= NUDGE_STEP;
+      renderCanvas();
+    });
+  }
+  if (panRightBtn) {
+    panRightBtn.addEventListener('click', () => {
+      if (!userImg) return;
+      imgState.xOffset += NUDGE_STEP;
+      renderCanvas();
+    });
+  }
+  if (panCenterBtn) {
+    panCenterBtn.addEventListener('click', () => {
+      if (!userImg) return;
+      imgState.xOffset = 0;
+      imgState.yOffset = 0;
+      renderCanvas();
+      showToast("Photo centered");
+    });
+  }
 
   // Role Chips Selector
   roleChips.forEach(chip => {
@@ -1161,6 +1243,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Deactivate all panels
     viewPanels.forEach(panel => panel.classList.remove('active'));
     navMenuItems.forEach(item => item.classList.remove('active'));
+
+    // Sync top navigation chips
+    const topNavChips = document.querySelectorAll('.top-nav-chip');
+    topNavChips.forEach(chip => chip.classList.remove('active'));
+    const activeTopNav = document.querySelector(`.top-nav-chip[data-view="${viewName}"]`);
+    if (activeTopNav) activeTopNav.classList.add('active');
 
     // Activate selected panel
     const targetPanel = document.getElementById(`view-${viewName}`);

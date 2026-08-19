@@ -43,6 +43,19 @@
         </h1>
         <h2 class="event-subtitle">MIDNIGHT HACKATHON</h2>
         <p class="app-desc">Create your official Hack Till Dawn memory &amp; frame in seconds</p>
+        
+        <!-- Top Quick Navigation Switcher -->
+        <nav class="top-view-nav">
+          <a href="#generator" class="top-nav-chip active" data-view="generator">
+            <i class="fa-solid fa-camera"></i> <span>Photobooth</span>
+          </a>
+          <a href="#wall" class="top-nav-chip" data-view="wall">
+            <i class="fa-solid fa-tv"></i> <span>Live Wall</span>
+          </a>
+          <a href="#admin" class="top-nav-chip" data-view="admin">
+            <i class="fa-solid fa-shield-halved"></i> <span>Moderator</span>
+          </a>
+        </nav>
       </header>
 
       <!-- Main Generator Workspace -->
@@ -54,7 +67,12 @@
             <span class="preview-label">
               <i class="fa-solid fa-sparkles"></i> LIVE FRAME PREVIEW
             </span>
-            <span class="resolution-tag">1200 × 1500 px HD</span>
+            <div class="preview-actions">
+              <button type="button" class="touch-mode-btn" id="touchModeBtn" title="Toggle Touch Scroll / Pan">
+                <i class="fa-solid fa-arrows-up-down"></i> <span id="touchModeLabel">Scroll Mode</span>
+              </button>
+              <span class="resolution-tag">1200 × 1500 px</span>
+            </div>
           </div>
 
           <!-- Canvas Wrapper preserving 4:5 aspect ratio -->
@@ -166,6 +184,24 @@
                 <div class="btn-group">
                   <button type="button" class="btn-icon" id="rotateLeftBtn" title="Rotate Left 90°"><i class="fa-solid fa-rotate-left"></i> -90°</button>
                   <button type="button" class="btn-icon" id="rotateRightBtn" title="Rotate Right 90°"><i class="fa-solid fa-rotate-right"></i> +90°</button>
+                </div>
+              </div>
+
+              <!-- Pan Position Controls -->
+              <div class="control-row">
+                <span class="control-label"><i class="fa-solid fa-up-down-left-right"></i> Pan Position</span>
+                <div class="pan-nudge-pad">
+                  <div class="nudge-row">
+                    <button type="button" class="btn-icon nudge-btn" id="panUpBtn" title="Pan Up"><i class="fa-solid fa-chevron-up"></i></button>
+                  </div>
+                  <div class="nudge-row nudge-mid">
+                    <button type="button" class="btn-icon nudge-btn" id="panLeftBtn" title="Pan Left"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button type="button" class="btn-icon nudge-btn nudge-center" id="panCenterBtn" title="Center Alignment"><i class="fa-solid fa-crosshairs"></i></button>
+                    <button type="button" class="btn-icon nudge-btn" id="panRightBtn" title="Pan Right"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                  <div class="nudge-row">
+                    <button type="button" class="btn-icon nudge-btn" id="panDownBtn" title="Pan Down"><i class="fa-solid fa-chevron-down"></i></button>
+                  </div>
                 </div>
               </div>
 
@@ -458,13 +494,39 @@
 
   <!-- Floating Navigator Trigger Menu -->
   <div class="floating-nav-control" id="floatingNavControl">
-    <button type="button" class="nav-trigger-btn" id="navTriggerBtn" title="Switch Workspace">
-      <i class="fa-solid fa-compass"></i>
+    <button type="button" class="nav-trigger-btn" id="navTriggerBtn" title="Switch View: Photobooth / Live Wall / Moderator">
+      <div class="nav-icon-badge">
+        <i class="fa-solid fa-compass"></i>
+        <span class="nav-pulse-beacon"></span>
+      </div>
+      <span class="nav-btn-text">Switch View</span>
+      <i class="fa-solid fa-chevron-up nav-arrow-icon"></i>
     </button>
     <div class="nav-menu-dropdown" id="navMenuDropdown">
-      <a href="#generator" class="nav-menu-item active" data-view="generator"><i class="fa-solid fa-camera"></i> Photobooth</a>
-      <a href="#wall" class="nav-menu-item" data-view="wall"><i class="fa-solid fa-tv"></i> Projection Wall</a>
-      <a href="#admin" class="nav-menu-item" data-view="admin"><i class="fa-solid fa-gears"></i> Moderator</a>
+      <div class="nav-dropdown-header">
+        <i class="fa-solid fa-layer-group"></i> SWITCH VIEW
+      </div>
+      <a href="#generator" class="nav-menu-item active" data-view="generator">
+        <div class="nav-menu-icon"><i class="fa-solid fa-camera"></i></div>
+        <div class="nav-menu-info">
+          <div class="nav-menu-name">Photobooth</div>
+          <div class="nav-menu-sub">Create &amp; download your badge</div>
+        </div>
+      </a>
+      <a href="#wall" class="nav-menu-item" data-view="wall">
+        <div class="nav-menu-icon"><i class="fa-solid fa-tv"></i></div>
+        <div class="nav-menu-info">
+          <div class="nav-menu-name">Live Projection Wall</div>
+          <div class="nav-menu-sub">Slideshow of approved badges</div>
+        </div>
+      </a>
+      <a href="#admin" class="nav-menu-item" data-view="admin">
+        <div class="nav-menu-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="nav-menu-info">
+          <div class="nav-menu-name">Moderator Console</div>
+          <div class="nav-menu-sub">Review &amp; approve live feed</div>
+        </div>
+      </a>
     </div>
   </div>
 
