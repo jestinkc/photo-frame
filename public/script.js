@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cameraVideo = document.getElementById('cameraVideo');
   const closeCameraBtn = document.getElementById('closeCameraBtn');
   const captureBtn = document.getElementById('captureBtn');
+  const switchCameraBtn = document.getElementById('switchCameraBtn');
   
   // Toast Notification DOM
   const toastNotification = document.getElementById('toastNotification');
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // State Variables
   let userImg = null;
   let localStream = null;
+  let currentFacingMode = 'user'; // 'user' (front) or 'environment' (back)
   let imgState = {
     xOffset: 0,
     yOffset: 0,
@@ -190,7 +192,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Pointer Drag Handlers
+  // Touch and Gesture State
+  let touchState = {
+    mode: 'none', // 'drag' | 'pinch'
+    initialDist: 0,
+    initialScale: 1.0,
+    initialMidX: 0,
+    initialMidY: 0,
+    initialXOffset: 0,
+    initialYOffset: 0
+  };
+
+  // Pointer Drag Handlers (Mouse)
   canvasWrapper.addEventListener('mousedown', (e) => {
     if (!userImg) return;
     isDragging = true;
@@ -211,28 +224,93 @@ document.addEventListener('DOMContentLoaded', () => {
     isDragging = false;
   });
 
-  // Touch Drag Handlers
+  // Calculate distance between two touches
+  function getTouchDistance(touches) {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  }
+
+  // Calculate midpoint between two touches in canvas space
+  function getTouchMidpoint(touches) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = (touches[0].clientX + touches[1].clientX) / 2;
+    const clientY = (touches[0].clientY + touches[1].clientY) / 2;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }
+
+  // Advanced Mobile Touch Gestures (Single Drag & Multi-Touch Pinch-to-Zoom)
   canvasWrapper.addEventListener('touchstart', (e) => {
     if (!userImg) return;
+    e.preventDefault();
+
     if (e.touches.length === 1) {
+      touchState.mode = 'drag';
+      isDragging = true;
+      const coords = getCanvasCoords(e);
+      startX = coords.x - imgState.xOffset;
+      startY = coords.y - imgState.yOffset;
+    } else if (e.touches.length === 2) {
+      touchState.mode = 'pinch';
+      isDragging = false;
+      touchState.initialDist = getTouchDistance(e.touches);
+      touchState.initialScale = imgState.scale;
+      const mid = getTouchMidpoint(e.touches);
+      touchState.initialMidX = mid.x;
+      touchState.initialMidY = mid.y;
+      touchState.initialXOffset = imgState.xOffset;
+      touchState.initialYOffset = imgState.yOffset;
+    }
+  }, { passive: false });
+
+  canvasWrapper.addEventListener('touchmove', (e) => {
+    if (!userImg) return;
+    e.preventDefault();
+
+    if (e.touches.length === 1 && touchState.mode === 'drag') {
+      const coords = getCanvasCoords(e);
+      imgState.xOffset = coords.x - startX;
+      imgState.yOffset = coords.y - startY;
+      renderCanvas();
+    } else if (e.touches.length === 2 && touchState.mode === 'pinch' && touchState.initialDist > 0) {
+      const currentDist = getTouchDistance(e.touches);
+      const scaleFactor = currentDist / touchState.initialDist;
+      let newScale = touchState.initialScale * scaleFactor;
+      newScale = Math.min(Math.max(newScale, 0.2), 3.0);
+      imgState.scale = newScale;
+      zoomSlider.value = newScale;
+
+      // Simultaneous Pinch + Pan tracking for natural mobile feel
+      const mid = getTouchMidpoint(e.touches);
+      imgState.xOffset = touchState.initialXOffset + (mid.x - touchState.initialMidX);
+      imgState.yOffset = touchState.initialYOffset + (mid.y - touchState.initialMidY);
+
+      renderCanvas();
+    }
+  }, { passive: false });
+
+  canvasWrapper.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+      touchState.mode = 'none';
+      isDragging = false;
+    } else if (e.touches.length === 1) {
+      // Transition from pinch to single-finger drag seamlessly
+      touchState.mode = 'drag';
       isDragging = true;
       const coords = getCanvasCoords(e);
       startX = coords.x - imgState.xOffset;
       startY = coords.y - imgState.yOffset;
     }
-  });
+  }, { passive: false });
 
-  canvasWrapper.addEventListener('touchmove', (e) => {
-    if (!isDragging || !userImg) return;
-    if (e.touches.length === 1) {
-      const coords = getCanvasCoords(e);
-      imgState.xOffset = coords.x - startX;
-      imgState.yOffset = coords.y - startY;
-      renderCanvas();
-    }
-  });
-
-  canvasWrapper.addEventListener('touchend', () => {
+  canvasWrapper.addEventListener('touchcancel', () => {
+    touchState.mode = 'none';
     isDragging = false;
   });
 
@@ -805,12 +883,17 @@ document.addEventListener('DOMContentLoaded', () => {
      WEBCAM CAMERA OPERATIONS
      ========================================================================== */
 
-  // Start Camera Stream
-  cameraBtn.addEventListener('click', async () => {
+  // Start/Restart Camera Stream
+  async function startCameraStream() {
     try {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+
       const constraints = {
         video: {
-          facingMode: 'user',
+          facingMode: currentFacingMode === 'environment' ? { ideal: 'environment' } : 'user',
           width: { ideal: 1280 },
           height: { ideal: 960 }
         },
@@ -819,6 +902,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       cameraVideo.srcObject = localStream;
+      
+      // Mirror video only for front/selfie camera
+      if (currentFacingMode === 'environment') {
+        cameraVideo.style.transform = 'none';
+      } else {
+        cameraVideo.style.transform = 'scaleX(-1)';
+      }
       
       // Hide scanner/guide if frame is disabled to allow normal photo capturing
       const guide = cameraModal.querySelector('.camera-frame-guide');
@@ -829,9 +919,23 @@ document.addEventListener('DOMContentLoaded', () => {
       cameraModal.classList.add('active');
     } catch (err) {
       console.error('Camera Access Error:', err);
-      showToast("Could not access webcam. Please upload a file instead.", true);
+      showToast("Could not access camera. Please check permissions or upload a file instead.", true);
     }
+  }
+
+  // Open Camera
+  cameraBtn.addEventListener('click', () => {
+    startCameraStream();
   });
+
+  // Switch Front / Back Camera (Mobile Support)
+  if (switchCameraBtn) {
+    switchCameraBtn.addEventListener('click', async () => {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      showToast(currentFacingMode === 'environment' ? "Switched to Back Camera" : "Switched to Front Camera");
+      await startCameraStream();
+    });
+  }
 
   // Stop Camera helper
   function stopCamera() {
@@ -858,6 +962,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (navigator.vibrate) navigator.vibrate(20);
+
     // Prepare a temporary offscreen canvas to capture current video frame
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
@@ -865,10 +971,15 @@ document.addEventListener('DOMContentLoaded', () => {
     tempCanvas.width = cameraVideo.videoWidth;
     tempCanvas.height = cameraVideo.videoHeight;
     
-    // Draw mirrored video frame (since user expects a mirror layout)
-    tempCtx.translate(tempCanvas.width, 0);
-    tempCtx.scale(-1, 1);
-    tempCtx.drawImage(cameraVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+    if (currentFacingMode === 'user') {
+      // Mirror user front camera
+      tempCtx.translate(tempCanvas.width, 0);
+      tempCtx.scale(-1, 1);
+      tempCtx.drawImage(cameraVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+    } else {
+      // Direct back camera frame
+      tempCtx.drawImage(cameraVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+    }
     
     // Load as User Image
     const img = new Image();
@@ -1447,5 +1558,38 @@ document.addEventListener('DOMContentLoaded', () => {
     displayActiveWallSlide();
     startWallSlideshowTimer(); // Reset auto rotation interval
   });
+
+  // Mobile Touch Swipe Gestures for Live Wall
+  let wallSwipeStartX = 0;
+  let wallSwipeStartY = 0;
+
+  slideContainer.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      wallSwipeStartX = e.touches[0].clientX;
+      wallSwipeStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  slideContainer.addEventListener('touchend', (e) => {
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - wallSwipeStartX;
+      const deltaY = e.changedTouches[0].clientY - wallSwipeStartY;
+
+      // Detect horizontal swipe if deltaX is significant and larger than vertical movement
+      if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        if (wallApprovedImages.length > 1) {
+          if (deltaX < 0) {
+            // Swiped Left -> Next Slide
+            wallCurrentIdx = (wallCurrentIdx + 1) % wallApprovedImages.length;
+          } else {
+            // Swiped Right -> Previous Slide
+            wallCurrentIdx = (wallCurrentIdx - 1 + wallApprovedImages.length) % wallApprovedImages.length;
+          }
+          displayActiveWallSlide();
+          startWallSlideshowTimer();
+        }
+      }
+    }
+  }, { passive: true });
 
 });
