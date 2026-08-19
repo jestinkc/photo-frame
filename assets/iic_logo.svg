@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
+  <g id="iic-symbol" transform="translate(10, 10)">
+    <!-- Orange & Blue Geometric Flame/Lightbulb -->
+    <path d="M 25 5 L 38 25 L 25 25 Z" fill="#DD6B20"/>
+    <path d="M 25 5 L 12 25 L 25 25 Z" fill="#E53E3E"/>
+    <path d="M 12 25 L 25 48 L 25 25 Z" fill="#3182CE"/>
+    <path d="M 38 25 L 25 48 L 25 25 Z" fill="#00B4D8"/>
+    <circle cx="25" cy="55" r="4" fill="#DD6B20"/>
+  </g>
+  <text x="65" y="28" font-family="'Inter', sans-serif" font-weight="800" font-size="13" fill="#C53030">INSTITUTION'S</text>
+  <text x="65" y="43" font-family="'Inter', sans-serif" font-weight="800" font-size="13" fill="#2B6CB0">INNOVATION</text>
+  <text x="65" y="58" font-family="'Inter', sans-serif" font-weight="800" font-size="13" fill="#2B6CB0">COUNCIL</text>
+  <text x="65" y="70" font-family="'Inter', sans-serif" font-weight="500" font-size="8" fill="#718096">(Ministry of HRD Initiative)</text>
+</svg>

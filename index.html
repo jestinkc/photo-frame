@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hack Till Dawn III | Photo Frame Generator</title>
+  <meta name="description" content="Official client-side photo frame generator for Hack Till Dawn III Midnight Hackathon by HELIOS IEDC & IIC, MBCCET. Create and download your custom event badge!">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@500;700;900&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Style -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Decorative Cyber Mesh -->
+  <div class="cyber-bg">
+    <div class="grid-overlay"></div>
+    <div class="glow-orb orb-teal"></div>
+    <div class="glow-orb orb-purple"></div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Top Navigation / Header -->
+    <header class="main-header">
+      <div class="organizer-badge">
+        <span class="pulse-dot"></span>
+        HELIOS IEDC &amp; IIC MBCCET PRESENTS
+      </div>
+      <h1 class="event-title">
+        HACK TILL DAWN <span class="roman-numeral">III</span>
+      </h1>
+      <h2 class="event-subtitle">MIDNIGHT HACKATHON</h2>
+      <p class="app-desc">Create your official Hack Till Dawn memory &amp; frame in seconds</p>
+    </header>
+
+    <!-- Main Generator Workspace -->
+    <main class="generator-workspace">
+      
+      <!-- Left Column: Frame Live Preview -->
+      <section class="preview-section">
+        <div class="preview-header">
+          <span class="preview-label">
+            <i class="fa-solid fa-sparkles"></i> LIVE FRAME PREVIEW
+          </span>
+          <span class="resolution-tag">1200 × 1500 px HD</span>
+        </div>
+
+        <!-- Canvas Wrapper preserving 4:5 aspect ratio -->
+        <div class="canvas-wrapper" id="dropZone">
+          <canvas id="frameCanvas" width="1200" height="1500"></canvas>
+          
+          <!-- Drag & Drop Hover Overlay -->
+          <div class="drop-overlay" id="dropOverlay">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p>Drop photo here to load</p>
+          </div>
+        </div>
+
+        <div class="canvas-tip">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span><strong>Pro Tip:</strong> Click &amp; drag directly on the photo inside the frame to align it! Use scroll wheel or pinch to zoom.</span>
+        </div>
+      </section>
+
+      <!-- Right Column: Control Panel -->
+      <aside class="control-panel">
+        
+        <!-- Step 1: Upload Photo Card -->
+        <div class="panel-card upload-card">
+          <div class="card-title">
+            <span class="step-num">1</span>
+            <h3>Get Your Photo</h3>
+          </div>
+          
+          <input type="file" id="photoInput" accept="image/jpeg, image/jpg, image/png, image/webp" class="hidden-input">
+          
+          <div class="upload-options">
+            <button type="button" class="btn btn-secondary btn-upload" id="uploadBtn">
+              <i class="fa-solid fa-upload"></i>
+              <span>Upload File</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-camera" id="cameraBtn">
+              <i class="fa-solid fa-camera"></i>
+              <span>Use Camera</span>
+            </button>
+          </div>
+          
+          <p class="file-hint"><i class="fa-solid fa-shield-halved"></i> Photos are processed locally &amp; securely.</p>
+        </div>
+
+        <!-- Step 2: Personalize Badge Info -->
+        <div class="panel-card info-card">
+          <div class="card-title">
+            <span class="step-num">2</span>
+            <h3>Personalize Details</h3>
+          </div>
+
+          <div class="input-group">
+            <label for="userNameInput"><i class="fa-solid fa-user-astronaut"></i> Participant Name</label>
+            <input type="text" id="userNameInput" placeholder="e.g. Alex Rivers" maxlength="30" value="HACKER NAME">
+          </div>
+
+          <div class="input-group">
+            <label for="userSubInput"><i class="fa-solid fa-graduation-cap"></i> Branch / Batch / College</label>
+            <input type="text" id="userSubInput" placeholder="e.g. CSE • BATCH OF 2028" maxlength="40" value="CSE • MBCCET">
+          </div>
+
+          <div class="input-group">
+            <label><i class="fa-solid fa-id-badge"></i> Role Badge</label>
+            <div class="role-selector">
+              <button type="button" class="role-chip active" data-role="PARTICIPANT">Participant</button>
+              <button type="button" class="role-chip" data-role="HACKER">Hacker</button>
+              <button type="button" class="role-chip" data-role="DEVELOPER">Developer</button>
+              <button type="button" class="role-chip" data-role="ORGANIZER">Organizer</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Photo Adjustments Panel -->
+        <div class="panel-card edit-card">
+          <div class="card-title-bar" id="toggleEditBtn">
+            <div class="card-title">
+              <span class="step-num">3</span>
+              <h3>Edit Photo Adjustments</h3>
+            </div>
+            <i class="fa-solid fa-sliders edit-icon"></i>
+          </div>
+
+          <div class="edit-controls-content" id="editControls">
+            <!-- Zoom Controls -->
+            <div class="control-row">
+              <span class="control-label"><i class="fa-solid fa-magnifying-glass"></i> Zoom</span>
+              <div class="btn-group">
+                <button type="button" class="btn-icon" id="zoomOutBtn" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                <input type="range" id="zoomSlider" min="0.2" max="3.0" step="0.05" value="1.0">
+                <button type="button" class="btn-icon" id="zoomInBtn" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+              </div>
+            </div>
+
+            <!-- Rotation Controls -->
+            <div class="control-row">
+              <span class="control-label"><i class="fa-solid fa-rotate"></i> Rotate</span>
+              <div class="btn-group">
+                <button type="button" class="btn-icon" id="rotateLeftBtn" title="Rotate Left 90°"><i class="fa-solid fa-rotate-left"></i> -90°</button>
+                <button type="button" class="btn-icon" id="rotateRightBtn" title="Rotate Right 90°"><i class="fa-solid fa-rotate-right"></i> +90°</button>
+              </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="control-row reset-row">
+              <button type="button" class="btn btn-secondary btn-reset" id="resetBtn">
+                <i class="fa-solid fa-arrows-rotate"></i> Reset Alignment
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Download Action -->
+        <div class="panel-card download-card">
+          <div class="action-buttons-stack">
+            <button type="button" class="btn btn-success btn-download" id="downloadBtn">
+              <i class="fa-solid fa-download"></i>
+              <span>Download Frame</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-submit-story" id="submitStoryBtn">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Submit to Live Story</span>
+            </button>
+          </div>
+          <p class="download-subtext">Generates 1200×1500 px high-res badge to download or stream</p>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p>HELIOS IEDC &amp; IIC • MAR BASELIOS CHRISTIAN COLLEGE OF ENGINEERING &amp; TECHNOLOGY</p>
+    </footer>
+
+  </div>
+
+  <!-- Cyber Camera Modal Overlay -->
+  <div class="camera-modal" id="cameraModal">
+    <div class="camera-container">
+      <div class="camera-header">
+        <h3><i class="fa-solid fa-camera"></i> Live Photo Booth</h3>
+        <button type="button" class="close-camera-btn" id="closeCameraBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="camera-preview-wrapper">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <div class="camera-frame-guide"></div>
+        <div class="camera-scanner-line"></div>
+      </div>
+      <div class="camera-footer">
+        <button type="button" class="btn btn-primary btn-capture" id="captureBtn">
+          <i class="fa-solid fa-circle-dot"></i> CAPTURE PHOTO
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toastNotification" class="toast-notification">
+    <i class="fa-solid fa-circle-check toast-icon"></i>
+    <span id="toastMessage">Action completed successfully!</span>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 450" width="400" height="450">
+  <defs>
+    <linearGradient id="tvGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00E5BE"/>
+      <stop offset="100%" stop-color="#10B39F"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E6FFFA"/>
+      <stop offset="100%" stop-color="#B2F5EA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mascot Group -->
+  <g id="tv-head-hacker" transform="translate(40, 20)">
+    <!-- Small Top Knot Antenna -->
+    <rect x="145" y="15" width="10" height="25" fill="#C53030" rx="3"/>
+    <rect x="125" y="10" width="50" height="8" fill="#E53E3E" rx="4"/>
+
+    <!-- TV Box Head -->
+    <rect x="75" y="35" width="150" height="120" rx="20" fill="#1A202C" stroke="#2D3748" stroke-width="6"/>
+    <rect x="85" y="45" width="130" height="100" rx="14" fill="#0D9488" opacity="0.2"/>
+    <rect x="90" y="50" width="120" height="90" rx="10" fill="url(#tvGlow)"/>
+
+    <!-- TV Vent / Knobs Side Panel -->
+    <rect x="200" y="60" width="15" height="40" rx="3" fill="#2D3748"/>
+    <circle cx="207.5" cy="115" r="4" fill="#E2E8F0"/>
+
+    <!-- Cool Sunglasses -->
+    <path d="M 95 70 Q 120 70 148 78 Q 175 70 205 70 L 200 100 Q 170 115 148 100 Q 125 115 100 100 Z" fill="#0F172A" stroke="#FFFFFF" stroke-width="2"/>
+    <!-- Sunglass Reflection -->
+    <path d="M 105 75 L 125 75 L 115 95 L 100 90 Z" fill="#FFFFFF" opacity="0.5"/>
+    <path d="M 160 75 L 180 75 L 170 95 L 155 90 Z" fill="#FFFFFF" opacity="0.5"/>
+
+    <!-- Sharp Mouth / Teeth Line -->
+    <path d="M 110 120 L 120 128 L 130 120 L 140 128 L 150 120 L 160 128 L 170 120 L 180 128" stroke="#0F172A" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- Kimono / Streetwear Jacket -->
+    <path d="M 65 155 L 110 150 L 150 200 L 190 150 L 235 155 L 220 300 L 80 300 Z" fill="url(#bodyGrad)"/>
+    <!-- Red Strap / Gourd -->
+    <path d="M 100 150 L 190 270" stroke="#E53E3E" stroke-width="8"/>
+    <!-- Red Sake Gourd -->
+    <circle cx="130" cy="230" r="16" fill="#C53030"/>
+    <circle cx="130" cy="210" r="10" fill="#E53E3E"/>
+
+    <!-- Pants -->
+    <rect x="100" y="295" width="40" height="70" fill="#1A202C" rx="5"/>
+    <rect x="160" y="295" width="40" height="70" fill="#1A202C" rx="5"/>
+
+    <!-- Futuristic Sneakers -->
+    <rect x="90" y="360" width="55" height="25" rx="8" fill="#E2E8F0" stroke="#10B39F" stroke-width="3"/>
+    <path d="M 90 380 L 145 380" stroke="#E53E3E" stroke-width="4"/>
+
+    <rect x="155" y="360" width="55" height="25" rx="8" fill="#E2E8F0" stroke="#10B39F" stroke-width="3"/>
+    <path d="M 155 380 L 210 380" stroke="#E53E3E" stroke-width="4"/>
+  </g>
+
+  <!-- Cute Cat Companion -->
+  <g id="cat-companion" transform="translate(260, 270)">
+    <!-- White Cat Body -->
+    <ellipse cx="45" cy="80" rx="30" ry="35" fill="#FFFFFF"/>
+    <!-- Cat Head -->
+    <circle cx="45" cy="40" r="28" fill="#FFFFFF"/>
+    <!-- Ears -->
+    <path d="M 22 25 L 20 0 L 38 18 Z" fill="#FFFFFF"/>
+    <path d="M 68 25 L 70 0 L 52 18 Z" fill="#FFFFFF"/>
+    <path d="M 25 22 L 23 5 L 35 17 Z" fill="#FED7D7"/>
+    <path d="M 65 22 L 67 5 L 55 17 Z" fill="#FED7D7"/>
+    <!-- Eyes -->
+    <ellipse cx="35" cy="42" rx="3" ry="5" fill="#1A202C"/>
+    <ellipse cx="55" cy="42" rx="3" ry="5" fill="#1A202C"/>
+    <!-- Nose & Mouth -->
+    <path d="M 43 48 L 47 48 L 45 51 Z" fill="#E53E3E"/>
+    <!-- Tail -->
+    <path d="M 72 90 Q 95 80 85 55" stroke="#FFFFFF" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+    <!-- Green Talisman Card on Forehead -->
+    <rect x="33" y="10" width="24" height="30" fill="#48BB78" rx="2" stroke="#2F855A" stroke-width="1.5"/>
+    <text x="45" y="30" font-family="sans-serif" font-weight="900" font-size="16" fill="#FFFFFF" text-anchor="middle">仙</text>
+  </g>
+</svg>

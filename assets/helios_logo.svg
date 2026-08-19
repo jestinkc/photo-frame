@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80" width="220" height="80">
+  <g id="helios-symbol" transform="translate(160, 15)">
+    <!-- Vibrant M / Ribbon Emblem -->
+    <path d="M 0 0 L 12 0 L 22 25 L 12 50 L 0 50 L 10 25 Z" fill="#10B39F"/>
+    <path d="M 24 0 L 36 0 L 46 25 L 36 50 L 24 50 L 34 25 Z" fill="#805AD5"/>
+    <path d="M 12 0 L 24 0 L 34 25 L 24 50 L 12 50 L 22 25 Z" fill="#D53F8C"/>
+  </g>
+  <text x="10" y="32" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#1A202C" letter-spacing="1">HELIOS</text>
+  <text x="10" y="52" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#10B39F" letter-spacing="1.5">MBCCET IEDC</text>
+</svg>
