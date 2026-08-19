@@ -2,7 +2,7 @@
   "name": "hacktilldawnframe",
   "version": "1.0.0",
   "description": "",
-  "main": "script.js",
+  "main": "api/server.js",
   "scripts": {
     "start": "node api/server.js",
     "dev": "node api/server.js",
