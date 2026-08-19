@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let startX = 0;
   let startY = 0;
   let activeRole = 'PARTICIPANT';
+  const applyFrameToggle = document.getElementById('applyFrameToggle');
+  let applyEventFrame = true;
 
   // Loaded Asset Objects
   const assets = {
@@ -283,6 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Personalization Inputs
   userNameInput.addEventListener('input', renderCanvas);
   userSubInput.addEventListener('input', renderCanvas);
+  applyFrameToggle.addEventListener('change', (e) => {
+    applyEventFrame = e.target.checked;
+    renderCanvas();
+  });
 
   /* ==========================================================================
      MAIN CANVAS RENDERING ENGINE (1200 x 1500)
@@ -291,14 +297,78 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. DRAW POSTER BACKGROUND
-    drawBackground();
+    if (applyEventFrame) {
+      // 1. DRAW POSTER BACKGROUND
+      drawBackground();
 
-    // 2. DRAW USER PHOTO (CLIPPED BEHIND FRAME WINDOW)
-    drawUserPhoto();
+      // 2. DRAW USER PHOTO (CLIPPED BEHIND FRAME WINDOW)
+      drawUserPhoto();
 
-    // 3. DRAW FRAME OVERLAY & BRANDING GRAPHICS
-    drawFrameOverlay();
+      // 3. DRAW FRAME OVERLAY & BRANDING GRAPHICS
+      drawFrameOverlay();
+    } else {
+      // Draw User Photo ONLY (without the outer frame layout, details, or logos)
+      drawFullUserPhoto();
+    }
+  }
+
+  // Draw User Photo full-screen covering 1200x1500 canvas
+  function drawFullUserPhoto() {
+    ctx.save();
+    
+    if (userImg) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      ctx.translate(centerX + imgState.xOffset, centerY + imgState.yOffset);
+      ctx.rotate((imgState.rotation * Math.PI) / 180);
+
+      // Cover scale for 1200x1500 canvas
+      const scaleW = canvas.width / userImg.width;
+      const scaleH = canvas.height / userImg.height;
+      const coverScale = Math.max(scaleW, scaleH);
+
+      const drawW = userImg.width * coverScale * imgState.scale;
+      const drawH = userImg.height * coverScale * imgState.scale;
+
+      ctx.drawImage(userImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    } else {
+      // Draw Empty State Placeholder
+      ctx.fillStyle = '#0B1116';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Inner Dashed Border
+      ctx.strokeStyle = 'rgba(16, 179, 159, 0.4)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([12, 12]);
+      ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+      ctx.setLineDash([]);
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // Icon Circle
+      ctx.fillStyle = 'rgba(16, 179, 159, 0.15)';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY - 40, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#00E5BE';
+      ctx.font = 'bold 36px "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('📷', centerX, centerY - 28);
+
+      // Helper Text
+      ctx.fillStyle = '#F5F4ED';
+      ctx.font = 'bold 32px "Inter", sans-serif';
+      ctx.fillText('Click or Drop Photo Here', centerX, centerY + 40);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '500 22px "Inter", sans-serif';
+      ctx.fillText('Your photo will cover the full canvas', centerX, centerY + 80);
+    }
+
+    ctx.restore();
   }
 
   // Draw Poster Starry / Cyber Grid Backdrop
