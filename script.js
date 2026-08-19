@@ -69,11 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
   assets.helios.src = 'assets/helios_logo.svg';
   assets.mascot.src = 'assets/tv_mascot.svg';
 
+  // High-Performance Offscreen Pre-rendering Cache Canvas
+  const staticCanvas = document.createElement('canvas');
+  staticCanvas.width = 1200;
+  staticCanvas.height = 1500;
+  const sCtx = staticCanvas.getContext('2d');
+  let staticFrameRendered = false;
+
   // Track loaded assets
   const assetKeys = ['mbccet', 'iic', 'helios', 'mascot'];
   assetKeys.forEach(key => {
     assets[key].onload = () => {
       assets.loadedCount++;
+      staticFrameRendered = false; // Invalidate cache
       renderCanvas();
     };
   });
@@ -336,7 +344,18 @@ document.addEventListener('DOMContentLoaded', () => {
      MAIN CANVAS RENDERING ENGINE (1200 x 1500)
      ========================================================================== */
 
+  // Debounced render queue using RequestAnimationFrame to prevent mobile lag
+  let renderPending = false;
   function renderCanvas() {
+    if (renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(() => {
+      drawCanvas();
+      renderPending = false;
+    });
+  }
+
+  function drawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (applyEventFrame) {
@@ -346,8 +365,19 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2. DRAW USER PHOTO (CLIPPED BEHIND FRAME WINDOW)
       drawUserPhoto();
 
-      // 3. DRAW FRAME OVERLAY & BRANDING GRAPHICS
-      drawFrameOverlay();
+      // 3. DRAW FRAME OVERLAY (Draw cached offscreen canvas)
+      if (assets.loadedCount === 4) {
+        if (!staticFrameRendered) {
+          preRenderStaticFrame();
+        }
+        ctx.drawImage(staticCanvas, 0, 0);
+      } else {
+        // Fallback: draw directly on main context while assets load
+        preRenderStaticFrame(ctx);
+      }
+
+      // 4. DRAW DYNAMIC DETAILS (Typed text card and role badge)
+      drawDynamicNameTag(ctx);
     } else {
       // Draw User Photo ONLY (without the outer frame layout, details, or logos)
       drawFullUserPhoto();
@@ -525,129 +555,154 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.restore();
   }
 
-  // Draw Frame Branding & Overlays
-  function drawFrameOverlay() {
+  // Pre-Render Static Branding elements onto offscreen canvas to save performance
+  function preRenderStaticFrame(targetCtx = sCtx) {
+    if (targetCtx === sCtx) {
+      sCtx.clearRect(0, 0, staticCanvas.width, staticCanvas.height);
+    }
+
     // -------------------------------------------------------------
     // A. TOP BRANDING LOGOS (MBCCET, IIC, HELIOS)
     // -------------------------------------------------------------
     if (assets.mbccet.complete) {
-      ctx.drawImage(assets.mbccet, 50, 25, 260, 78);
+      targetCtx.drawImage(assets.mbccet, 50, 25, 260, 78);
     }
     if (assets.iic.complete) {
-      ctx.drawImage(assets.iic, 680, 25, 220, 75);
+      targetCtx.drawImage(assets.iic, 680, 25, 220, 75);
     }
     if (assets.helios.complete) {
-      ctx.drawImage(assets.helios, 920, 25, 230, 75);
+      targetCtx.drawImage(assets.helios, 920, 25, 230, 75);
     }
 
     // -------------------------------------------------------------
     // B. PRESENTS TEXT
     // -------------------------------------------------------------
-    ctx.fillStyle = '#050708';
-    ctx.font = '900 32px "Inter", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('HELIOS IEDC & IIC MBCCET', 600, 150);
+    targetCtx.fillStyle = '#050708';
+    targetCtx.font = '900 32px "Inter", sans-serif';
+    targetCtx.textAlign = 'center';
+    targetCtx.fillText('HELIOS IEDC & IIC MBCCET', 600, 150);
 
-    ctx.fillStyle = '#10B39F';
-    ctx.font = '800 20px "Orbitron", sans-serif';
-    ctx.letterSpacing = '8px';
-    ctx.fillText('P R E S E N T S', 600, 185);
+    targetCtx.fillStyle = '#10B39F';
+    targetCtx.font = '800 20px "Orbitron", sans-serif';
+    targetCtx.letterSpacing = '8px';
+    targetCtx.fillText('P R E S E N T S', 600, 185);
 
     // -------------------------------------------------------------
     // C. HACK TILL DAWN III PIXEL ART TITLE & TILL BADGE
     // -------------------------------------------------------------
     // Title Shadow
-    ctx.fillStyle = '#050708';
-    ctx.font = '700 82px "Silkscreen", monospace';
-    ctx.fillText('Hack', 604, 274);
-    ctx.fillText('Dawn', 604, 364);
+    targetCtx.fillStyle = '#050708';
+    targetCtx.font = '700 82px "Silkscreen", monospace';
+    targetCtx.fillText('Hack', 604, 274);
+    targetCtx.fillText('Dawn', 604, 364);
 
     // Main Turquoise Pixel Title
-    ctx.fillStyle = '#10B39F';
-    ctx.fillText('Hack', 600, 270);
-    ctx.fillText('Dawn', 600, 360);
+    targetCtx.fillStyle = '#10B39F';
+    targetCtx.fillText('Hack', 600, 270);
+    targetCtx.fillText('Dawn', 600, 360);
 
     // Diagonal "Till" Badge
-    ctx.save();
-    ctx.translate(600, 290);
-    ctx.rotate((-8 * Math.PI) / 180);
+    targetCtx.save();
+    targetCtx.translate(600, 290);
+    targetCtx.rotate((-8 * Math.PI) / 180);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.strokeStyle = '#050708';
-    ctx.lineWidth = 6;
-    roundRectPath(ctx, -90, -32, 180, 64, 8);
-    ctx.fill();
-    ctx.stroke();
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.strokeStyle = '#050708';
+    targetCtx.lineWidth = 6;
+    roundRectPath(targetCtx, -90, -32, 180, 64, 8);
+    targetCtx.fill();
+    targetCtx.stroke();
 
-    ctx.fillStyle = '#050708';
-    ctx.font = '700 40px "Silkscreen", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('Till', 0, 12);
-    ctx.restore();
+    targetCtx.fillStyle = '#050708';
+    targetCtx.font = '700 40px "Silkscreen", monospace';
+    targetCtx.textAlign = 'center';
+    targetCtx.fillText('Till', 0, 12);
+    targetCtx.restore();
 
     // -------------------------------------------------------------
     // D. EVENT DETAILS PILL BADGE
     // -------------------------------------------------------------
     const pillY = 385;
-    ctx.save();
-    ctx.fillStyle = '#0A5C53';
-    ctx.strokeStyle = '#00E5BE';
-    ctx.lineWidth = 3;
-    roundRectPath(ctx, 160, pillY, 880, 60, 30);
-    ctx.fill();
-    ctx.stroke();
+    targetCtx.save();
+    targetCtx.fillStyle = '#0A5C53';
+    targetCtx.strokeStyle = '#00E5BE';
+    targetCtx.lineWidth = 3;
+    roundRectPath(targetCtx, 160, pillY, 880, 60, 30);
+    targetCtx.fill();
+    targetCtx.stroke();
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 22px "Orbitron", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('📅 AUG 19 & 20  |  🕒 5:00 PM TO 9:00 AM  |  📍 CCF LAB', 600, pillY + 38);
-    ctx.restore();
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.font = '700 22px "Orbitron", sans-serif';
+    targetCtx.textAlign = 'center';
+    targetCtx.fillText('📅 AUG 19 & 20  |  🕒 5:00 PM TO 9:00 AM  |  📍 CCF LAB', 600, pillY + 38);
+    targetCtx.restore();
 
     // -------------------------------------------------------------
-    // E. PERSONALIZED PARTICIPANT OVERLAY CARD (Bottom of Photo)
+    // E. MASCOT & REGISTRATION QR
     // -------------------------------------------------------------
+    if (assets.mascot.complete) {
+      targetCtx.drawImage(assets.mascot, 40, 1160, 280, 315);
+    }
+    drawQRStamp(targetCtx, 1010, 1310);
+
+    // -------------------------------------------------------------
+    // F. FOOTER SLOGAN & BRANDING
+    // -------------------------------------------------------------
+    targetCtx.fillStyle = '#94A3B8';
+    targetCtx.font = 'italic 500 20px "Inter", sans-serif';
+    targetCtx.textAlign = 'center';
+    targetCtx.fillText('"Level Up Your Skills from Day 1!"', 650, 1370);
+
+    targetCtx.fillStyle = '#00E5BE';
+    targetCtx.font = '700 20px "Orbitron", sans-serif';
+    targetCtx.letterSpacing = '2px';
+    targetCtx.fillText('MIDNIGHT HACKATHON', 650, 1405);
+
+    targetCtx.fillStyle = '#F5F4ED';
+    targetCtx.font = '600 18px "Inter", sans-serif';
+    targetCtx.fillText('HELIOS IEDC & IIC • MBCCET', 650, 1440);
+
+    if (targetCtx === sCtx) {
+      staticFrameRendered = true;
+    }
+  }
+
+  // Draw Dynamic Personalized Name Tag overlay
+  function drawDynamicNameTag(targetCtx) {
     const cardY = 1120;
-    ctx.save();
+    targetCtx.save();
+    
     // Glassmorphic name tag card
-    ctx.fillStyle = 'rgba(11, 15, 18, 0.95)';
-    ctx.strokeStyle = '#10B39F';
-    ctx.lineWidth = 4;
-    roundRectPath(ctx, 220, cardY, 760, 150, 20);
-    ctx.fill();
-    ctx.stroke();
+    targetCtx.fillStyle = 'rgba(11, 15, 18, 0.95)';
+    targetCtx.strokeStyle = '#10B39F';
+    targetCtx.lineWidth = 4;
+    roundRectPath(targetCtx, 220, cardY, 760, 150, 20);
+    targetCtx.fill();
+    targetCtx.stroke();
 
     // User Name
     const rawName = userNameInput.value.trim() || 'YOUR NAME HERE';
-    ctx.fillStyle = '#F5F4ED';
-    ctx.font = 'bold 38px "Inter", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(rawName.toUpperCase(), 600, cardY + 52);
+    targetCtx.fillStyle = '#F5F4ED';
+    targetCtx.font = 'bold 38px "Inter", sans-serif';
+    targetCtx.textAlign = 'center';
+    targetCtx.fillText(rawName.toUpperCase(), 600, cardY + 52);
 
     // User Subtitle / College
     const rawSub = userSubInput.value.trim() || 'CSE • MBCCET';
-    ctx.fillStyle = '#00E5BE';
-    ctx.font = '600 22px "Inter", sans-serif';
-    ctx.fillText(rawSub.toUpperCase(), 600, cardY + 90);
+    targetCtx.fillStyle = '#00E5BE';
+    targetCtx.font = '600 22px "Inter", sans-serif';
+    targetCtx.fillText(rawSub.toUpperCase(), 600, cardY + 90);
 
     // Role Chip Badge
-    ctx.fillStyle = '#10B39F';
-    roundRectPath(ctx, 500, cardY + 105, 200, 34, 17);
-    ctx.fill();
+    targetCtx.fillStyle = '#10B39F';
+    roundRectPath(targetCtx, 500, cardY + 105, 200, 34, 17);
+    targetCtx.fill();
 
-    ctx.fillStyle = '#050708';
-    ctx.font = '900 16px "Orbitron", sans-serif';
-    ctx.fillText(activeRole, 600, cardY + 128);
-    ctx.restore();
-
-    // -------------------------------------------------------------
-    // F. MASCOT & FOOTER BRANDING
-    // -------------------------------------------------------------
-    // TV Mascot on bottom left
-    if (assets.mascot.complete) {
-      ctx.drawImage(assets.mascot, 40, 1160, 280, 315);
-    }
-
-    // QR Code / Registration Stamp on bottom right
+    targetCtx.fillStyle = '#050708';
+    targetCtx.font = '900 16px "Orbitron", sans-serif';
+    targetCtx.fillText(activeRole, 600, cardY + 128);
+    targetCtx.restore();
+  }
     drawQRStamp(1010, 1310);
 
     // Footer Slogan & College Name
@@ -661,53 +716,49 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.letterSpacing = '2px';
     ctx.fillText('MIDNIGHT HACKATHON', 650, 1405);
 
-    ctx.fillStyle = '#F5F4ED';
-    ctx.font = '600 18px "Inter", sans-serif';
-    ctx.fillText('HELIOS IEDC & IIC • MBCCET', 650, 1440);
-  }
 
   // Draw QR Stamp Graphic
-  function drawQRStamp(x, y) {
-    ctx.save();
-    ctx.translate(x, y);
+  function drawQRStamp(targetCtx, x, y) {
+    targetCtx.save();
+    targetCtx.translate(x, y);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.strokeStyle = '#10B39F';
-    ctx.lineWidth = 3;
-    roundRectPath(ctx, -70, -70, 140, 140, 16);
-    ctx.fill();
-    ctx.stroke();
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.strokeStyle = '#10B39F';
+    targetCtx.lineWidth = 3;
+    roundRectPath(targetCtx, -70, -70, 140, 140, 16);
+    targetCtx.fill();
+    targetCtx.stroke();
 
     // Stylized QR grid pattern
-    ctx.fillStyle = '#050708';
+    targetCtx.fillStyle = '#050708';
     // Top-left finder
-    ctx.fillRect(-55, -55, 35, 35);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(-45, -45, 15, 15);
-    ctx.fillStyle = '#050708';
-    ctx.fillRect(-40, -40, 5, 5);
+    targetCtx.fillRect(-55, -55, 35, 35);
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fillRect(-45, -45, 15, 15);
+    targetCtx.fillStyle = '#050708';
+    targetCtx.fillRect(-40, -40, 5, 5);
 
     // Top-right finder
-    ctx.fillRect(20, -55, 35, 35);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(30, -45, 15, 15);
-    ctx.fillStyle = '#050708';
-    ctx.fillRect(35, -40, 5, 5);
+    targetCtx.fillRect(20, -55, 35, 35);
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fillRect(30, -45, 15, 15);
+    targetCtx.fillStyle = '#050708';
+    targetCtx.fillRect(35, -40, 5, 5);
 
     // Bottom-left finder
-    ctx.fillRect(-55, 20, 35, 35);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(-45, 30, 15, 15);
-    ctx.fillStyle = '#050708';
-    ctx.fillRect(-40, 35, 5, 5);
+    targetCtx.fillRect(-55, 20, 35, 35);
+    targetCtx.fillStyle = '#FFFFFF';
+    targetCtx.fillRect(-45, 30, 15, 15);
+    targetCtx.fillStyle = '#050708';
+    targetCtx.fillRect(-40, 35, 5, 5);
 
     // Random QR data blocks
-    ctx.fillRect(0, -20, 10, 20);
-    ctx.fillRect(20, 0, 15, 10);
-    ctx.fillRect(10, 25, 25, 25);
-    ctx.fillRect(-20, 0, 10, 35);
+    targetCtx.fillRect(0, -20, 10, 20);
+    targetCtx.fillRect(20, 0, 15, 10);
+    targetCtx.fillRect(10, 25, 25, 25);
+    targetCtx.fillRect(-20, 0, 10, 35);
 
-    ctx.restore();
+    targetCtx.restore();
   }
 
   // Canvas Path Helper for Rounded Rectangles
@@ -730,8 +781,8 @@ document.addEventListener('DOMContentLoaded', () => {
      ========================================================================== */
 
   downloadBtn.addEventListener('click', () => {
-    // Render latest state
-    renderCanvas();
+    // Render latest state synchronously to grab exact active pixels
+    drawCanvas();
 
     // Create download link
     const dataURL = canvas.toDataURL('image/png');
@@ -843,8 +894,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Render latest adjustments
-    renderCanvas();
+    // Render latest adjustments synchronously for upload capture
+    drawCanvas();
 
     // Get finalized base64 representation of canvas
     const dataURL = canvas.toDataURL('image/png');

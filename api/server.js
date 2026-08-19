@@ -4,8 +4,8 @@ const path = require('path');
 const { Pool } = require('pg');
 const { put, del } = require('@vercel/blob');
 
-// Manually parse local .env file if present
-const envPath = path.join(__dirname, '.env');
+// Manually parse local .env file if present (located in the project root)
+const envPath = path.join(__dirname, '..', '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
   envContent.split(/\r?\n/).forEach(line => {
@@ -143,7 +143,7 @@ app.post('/api/submit', async (req, res) => {
       console.log(`[Submission] Cloud saved ${filename} to Vercel Blob`);
     } else {
       // Local Fallback: Save file to local uploads directory for local testing
-      const uploadsDir = path.join(__dirname, 'uploads');
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
@@ -248,7 +248,7 @@ app.post('/api/reject', async (req, res) => {
       console.log(`[Reject] Deleted from Vercel Blob: ${fileUrl}`);
     } else {
       // Delete local fallback file
-      const localPath = path.join(__dirname, 'uploads', filename);
+      const localPath = path.join(__dirname, '..', 'uploads', filename);
       if (fs.existsSync(localPath)) {
         fs.unlinkSync(localPath);
         console.log(`[Reject] Deleted local fallback file: ${localPath}`);
@@ -265,11 +265,11 @@ app.post('/api/reject', async (req, res) => {
   }
 });
 
-// Serve local fallback uploads directory if running locally
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve local fallback uploads directory if running locally (relative to project root)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Serve other static project files from current workspace directory
-app.use(express.static(__dirname));
+// Serve other static project files from project root directory
+app.use(express.static(path.join(__dirname, '..')));
 
 // Start listening
 app.listen(PORT, () => {
