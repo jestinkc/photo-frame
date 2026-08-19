@@ -268,15 +268,19 @@ app.post('/api/reject', async (req, res) => {
 // Serve local fallback uploads directory if running locally (relative to project root)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Serve other static project files from project root directory
-app.use(express.static(path.join(__dirname, '..')));
+// Serve other static project files from public directory
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Start listening
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 Hack Till Dawn III Live Photobooth Server Running`);
-  console.log(`👉 Access Client at:   http://localhost:${PORT}`);
-  console.log(`👉 Access Admin at:    http://localhost:${PORT}/admin.html`);
-  console.log(`👉 Access Live Wall at: http://localhost:${PORT}/story.html`);
-  console.log(`====================================================`);
-});
+if (require.main === module) {
+  // Start listening
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`🚀 Hack Till Dawn III Live Photobooth Server Running`);
+    console.log(`👉 Access Client at:   http://localhost:${PORT}`);
+    console.log(`👉 Access Admin at:    http://localhost:${PORT}/admin.html`);
+    console.log(`👉 Access Live Wall at: http://localhost:${PORT}/story.html`);
+    console.log(`====================================================`);
+  });
+}
+
+module.exports = app;
