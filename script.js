@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let startX = 0;
   let startY = 0;
   let activeRole = 'PARTICIPANT';
-  const applyFrameToggle = document.getElementById('applyFrameToggle');
+  const frameModeChips = document.querySelectorAll('.frame-mode-chip');
   let applyEventFrame = true;
 
   // Loaded Asset Objects
@@ -290,33 +290,46 @@ document.addEventListener('DOMContentLoaded', () => {
   // Personalization Inputs
   userNameInput.addEventListener('input', renderCanvas);
   userSubInput.addEventListener('input', renderCanvas);
-  applyFrameToggle.addEventListener('change', (e) => {
-    applyEventFrame = e.target.checked;
-    
-    // Dynamically recalculate baseScale to prevent sudden size jumping
-    if (userImg) {
-      if (applyEventFrame) {
-        const scaleW = frameBox.width / userImg.width;
-        const scaleH = frameBox.height / userImg.height;
-        imgState.baseScale = Math.max(scaleW, scaleH);
-      } else {
-        const scaleW = canvas.width / userImg.width;
-        const scaleH = canvas.height / userImg.height;
-        imgState.baseScale = Math.max(scaleW, scaleH);
+  frameModeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      frameModeChips.forEach(c => {
+        c.classList.remove('active');
+        c.style.background = 'rgba(5, 7, 8, 0.4)';
+        c.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        c.style.color = 'var(--text-muted)';
+      });
+      chip.classList.add('active');
+      chip.style.background = 'rgba(16, 179, 159, 0.15)';
+      chip.style.borderColor = 'var(--primary-teal)';
+      chip.style.color = 'var(--neon-teal)';
+
+      applyEventFrame = (chip.getAttribute('data-mode') === 'with-frame');
+
+      // Dynamically recalculate baseScale to prevent sudden size jumping
+      if (userImg) {
+        if (applyEventFrame) {
+          const scaleW = frameBox.width / userImg.width;
+          const scaleH = frameBox.height / userImg.height;
+          imgState.baseScale = Math.max(scaleW, scaleH);
+        } else {
+          const scaleW = canvas.width / userImg.width;
+          const scaleH = canvas.height / userImg.height;
+          imgState.baseScale = Math.max(scaleW, scaleH);
+        }
       }
-    }
 
-    // Update labels dynamically
-    const downloadSpan = downloadBtn.querySelector('span');
-    if (downloadSpan) {
-      downloadSpan.textContent = applyEventFrame ? 'Download Frame' : 'Download Photo';
-    }
-    const submitSpan = submitStoryBtn.querySelector('span');
-    if (submitSpan) {
-      submitSpan.textContent = applyEventFrame ? 'Submit to Live Story' : 'Submit Photo to Wall';
-    }
+      // Update labels dynamically
+      const downloadSpan = downloadBtn.querySelector('span');
+      if (downloadSpan) {
+        downloadSpan.textContent = applyEventFrame ? 'Download Frame' : 'Download Photo';
+      }
+      const submitSpan = submitStoryBtn.querySelector('span');
+      if (submitSpan) {
+        submitSpan.textContent = applyEventFrame ? 'Submit to Live Story' : 'Submit Photo to Wall';
+      }
 
-    renderCanvas();
+      renderCanvas();
+    });
   });
 
   /* ==========================================================================

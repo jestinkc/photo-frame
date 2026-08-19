@@ -127,15 +127,14 @@
             </div>
 
             <div class="input-group" style="margin-top: 15px;">
-              <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; background: rgba(5, 7, 8, 0.4); border: 1px solid rgba(16, 179, 159, 0.15); padding: 12px 16px; border-radius: 12px;">
-                <div class="setting-info" style="text-align: left;">
-                  <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--off-white);"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--neon-teal); margin-right: 6px;"></i> Apply Event Frame</h4>
-                  <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Render the official Hack Till Dawn III border and details on the poster.</p>
-                </div>
-                <label class="switch">
-                  <input type="checkbox" id="applyFrameToggle" checked>
-                  <span class="slider"></span>
-                </label>
+              <label><i class="fa-solid fa-wand-magic-sparkles"></i> Frame Mode</label>
+              <div class="frame-mode-selector" style="display: flex; gap: 10px; margin-top: 8px;">
+                <button type="button" class="frame-mode-chip active" data-mode="with-frame" style="flex: 1; padding: 12px; border: 1px solid var(--primary-teal); background: rgba(16, 179, 159, 0.15); color: var(--neon-teal); border-radius: 8px; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all var(--transition-fast);">
+                  <i class="fa-solid fa-id-badge"></i> With Frame
+                </button>
+                <button type="button" class="frame-mode-chip" data-mode="no-frame" style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(5, 7, 8, 0.4); color: var(--text-muted); border-radius: 8px; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all var(--transition-fast);">
+                  <i class="fa-solid fa-image"></i> No Frame (Normal)
+                </button>
               </div>
             </div>
           </div>
