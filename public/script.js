@@ -863,19 +863,6 @@ document.addEventListener('DOMContentLoaded', () => {
     targetCtx.fillText(activeRole, 600, cardY + 128);
     targetCtx.restore();
   }
-    drawQRStamp(1010, 1310);
-
-    // Footer Slogan & College Name
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'italic 500 20px "Inter", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('"Level Up Your Skills from Day 1!"', 650, 1370);
-
-    ctx.fillStyle = '#00E5BE';
-    ctx.font = '700 20px "Orbitron", sans-serif';
-    ctx.letterSpacing = '2px';
-    ctx.fillText('MIDNIGHT HACKATHON', 650, 1405);
-
 
   // Draw QR Stamp Graphic
   function drawQRStamp(targetCtx, x, y) {
