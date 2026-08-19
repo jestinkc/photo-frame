@@ -145,11 +145,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetTransform() {
     if (!userImg) return;
 
-    // Calculate aspect ratio cover scale for frameBox
-    const scaleW = frameBox.width / userImg.width;
-    const scaleH = frameBox.height / userImg.height;
-    // Cover the box nicely
-    imgState.baseScale = Math.max(scaleW, scaleH);
+    // Calculate aspect ratio cover scale for either frameBox or full canvas
+    if (applyEventFrame) {
+      const scaleW = frameBox.width / userImg.width;
+      const scaleH = frameBox.height / userImg.height;
+      imgState.baseScale = Math.max(scaleW, scaleH);
+    } else {
+      const scaleW = canvas.width / userImg.width;
+      const scaleH = canvas.height / userImg.height;
+      imgState.baseScale = Math.max(scaleW, scaleH);
+    }
     imgState.scale = 1.0;
     imgState.xOffset = 0;
     imgState.yOffset = 0;
@@ -288,6 +293,19 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFrameToggle.addEventListener('change', (e) => {
     applyEventFrame = e.target.checked;
     
+    // Dynamically recalculate baseScale to prevent sudden size jumping
+    if (userImg) {
+      if (applyEventFrame) {
+        const scaleW = frameBox.width / userImg.width;
+        const scaleH = frameBox.height / userImg.height;
+        imgState.baseScale = Math.max(scaleW, scaleH);
+      } else {
+        const scaleW = canvas.width / userImg.width;
+        const scaleH = canvas.height / userImg.height;
+        imgState.baseScale = Math.max(scaleW, scaleH);
+      }
+    }
+
     // Update labels dynamically
     const downloadSpan = downloadBtn.querySelector('span');
     if (downloadSpan) {
@@ -1345,5 +1363,25 @@ document.addEventListener('DOMContentLoaded', () => {
       wallInterval = null;
     }
   }
+
+  // Bind Manual Projection Wall Arrow Navigation Controls
+  const prevSlideBtn = document.getElementById('prevSlideBtn');
+  const nextSlideBtn = document.getElementById('nextSlideBtn');
+
+  prevSlideBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (wallApprovedImages.length <= 1) return;
+    wallCurrentIdx = (wallCurrentIdx - 1 + wallApprovedImages.length) % wallApprovedImages.length;
+    displayActiveWallSlide();
+    startWallSlideshowTimer(); // Reset auto rotation interval
+  });
+
+  nextSlideBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (wallApprovedImages.length <= 1) return;
+    wallCurrentIdx = (wallCurrentIdx + 1) % wallApprovedImages.length;
+    displayActiveWallSlide();
+    startWallSlideshowTimer(); // Reset auto rotation interval
+  });
 
 });

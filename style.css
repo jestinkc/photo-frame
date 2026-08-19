@@ -1539,4 +1539,40 @@ input:checked+.slider:before {
   50% { transform: translateY(-10px); }
 }
 
+/* Slide Navigation Buttons on Live Wall */
+.slide-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(10, 14, 18, 0.4);
+  border: 1px solid rgba(16, 179, 159, 0.3);
+  color: var(--neon-teal);
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(8px);
+  outline: none;
+}
+.slide-nav-btn:hover {
+  background: var(--primary-teal);
+  color: var(--bg-dark);
+  border-color: var(--neon-teal);
+  box-shadow: 0 0 20px var(--glow-teal);
+  transform: translateY(-50%) scale(1.1);
+}
+.prev-btn {
+  left: 30px;
+}
+.next-btn {
+  right: 30px;
+}
+
+
 

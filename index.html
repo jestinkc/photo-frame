@@ -216,6 +216,11 @@
     <div class="main-layout">
       <!-- Left: Slide presentation area -->
       <main class="projection-area">
+        <!-- Manual slide navigation buttons -->
+        <button type="button" class="slide-nav-btn prev-btn" id="prevSlideBtn" title="Previous Slide">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
         <div class="slide-wrapper" id="slideContainer">
           <!-- Default State: Loading / Empty -->
           <div class="slide active">
@@ -226,6 +231,10 @@
             </div>
           </div>
         </div>
+
+        <button type="button" class="slide-nav-btn next-btn" id="nextSlideBtn" title="Next Slide">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </main>
 
       <!-- Right: Connection & Info Sidebar -->
