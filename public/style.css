@@ -189,6 +189,9 @@ body {
   margin-top: 16px;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 50;
+  touch-action: manipulation;
 }
 
 .top-nav-chip {
@@ -202,6 +205,12 @@ body {
   font-family: var(--font-cyber);
   font-size: 0.8rem;
   font-weight: 700;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: all var(--transition-fast);
 }
 
@@ -957,7 +966,8 @@ input[type="range"]::-webkit-slider-thumb {
   position: fixed;
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
   left: max(20px, env(safe-area-inset-left, 20px));
-  z-index: 1050;
+  z-index: 9999;
+  touch-action: manipulation;
 }
 
 .nav-trigger-btn {
@@ -972,6 +982,9 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 179, 159, 0.35);
   backdrop-filter: blur(12px);
+  touch-action: manipulation;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
   transition: all var(--transition-fast);
 }
 
@@ -1045,6 +1058,7 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 0;
   transform: translateY(12px) scale(0.96);
   pointer-events: none;
+  touch-action: manipulation;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1082,6 +1096,13 @@ input[type="range"]::-webkit-slider-thumb {
   transition: all var(--transition-fast);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
 }
 
 .nav-menu-item:hover {

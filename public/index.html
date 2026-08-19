@@ -46,15 +46,15 @@
         
         <!-- Top Quick Navigation Switcher -->
         <nav class="top-view-nav">
-          <a href="#generator" class="top-nav-chip active" data-view="generator">
+          <button type="button" class="top-nav-chip active" data-view="generator" onclick="switchAppView('generator', event)">
             <i class="fa-solid fa-camera"></i> <span>Photobooth</span>
-          </a>
-          <a href="#wall" class="top-nav-chip" data-view="wall">
+          </button>
+          <button type="button" class="top-nav-chip" data-view="wall" onclick="switchAppView('wall', event)">
             <i class="fa-solid fa-tv"></i> <span>Live Wall</span>
-          </a>
-          <a href="#admin" class="top-nav-chip" data-view="admin">
+          </button>
+          <button type="button" class="top-nav-chip" data-view="admin" onclick="switchAppView('admin', event)">
             <i class="fa-solid fa-shield-halved"></i> <span>Moderator</span>
-          </a>
+          </button>
         </nav>
       </header>
 
@@ -356,12 +356,12 @@
           <p>Live feed review center for organizers &amp; admins</p>
         </div>
         <div class="header-actions">
-          <a href="#generator" class="btn-reject" style="padding: 10px 16px; border-radius: 30px; text-decoration: none; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700;">
+          <button type="button" onclick="switchAppView('generator', event)" class="btn-reject" style="padding: 10px 16px; border-radius: 30px; cursor: pointer; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700;">
             <i class="fa-solid fa-arrow-left"></i> BACK TO GENERATOR
-          </a>
-          <a href="#wall" style="background: linear-gradient(135deg, var(--accent-purple), #7c3aed); color: white; padding: 10px 18px; border-radius: 30px; text-decoration: none; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700; box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);">
+          </button>
+          <button type="button" onclick="switchAppView('wall', event)" style="background: linear-gradient(135deg, var(--accent-purple), #7c3aed); color: white; border: none; cursor: pointer; padding: 10px 18px; border-radius: 30px; font-family: var(--font-cyber); font-size: 0.8rem; font-weight: 700; box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);">
             <i class="fa-solid fa-tv"></i> OPEN LIVE WALL
-          </a>
+          </button>
         </div>
       </header>
 
@@ -450,15 +450,19 @@
     <div class="passcode-container">
       <div class="passcode-header">
         <h3><i class="fa-solid fa-lock"></i> Moderator Access</h3>
-        <button type="button" class="close-passcode-btn" id="closePasscodeBtn"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="close-passcode-btn" id="closePasscodeBtn" onclick="closePasscodePrompt()"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="passcode-body">
         <p>Please enter the moderation console access passcode.</p>
-        <input type="password" id="adminPasscodeInput" placeholder="••••••••" maxlength="20">
+        <input type="password" id="adminPasscodeInput" placeholder="Enter 'htd3'" maxlength="20" value="htd3">
+        <div style="background: rgba(139, 92, 246, 0.15); border: 1px dashed rgba(139, 92, 246, 0.4); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; color: var(--accent-purple); display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-key"></i> Default Passcode: <strong>htd3</strong>
+        </div>
         <div id="passcodeError" class="passcode-error">Invalid access passcode. Try again.</div>
       </div>
-      <div class="passcode-footer">
-        <button type="button" class="btn btn-primary" id="submitPasscodeBtn">Unlock Console</button>
+      <div class="passcode-footer" style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="closePasscodePrompt()" style="flex: 1; padding: 12px;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="submitPasscodeBtn" onclick="verifyAdminPasscode()" style="flex: 1.5; padding: 12px; background: linear-gradient(135deg, var(--accent-purple), #7c3aed); color: white;">Unlock Console</button>
       </div>
     </div>
   </div>
@@ -494,7 +498,7 @@
 
   <!-- Floating Navigator Trigger Menu -->
   <div class="floating-nav-control" id="floatingNavControl">
-    <button type="button" class="nav-trigger-btn" id="navTriggerBtn" title="Switch View: Photobooth / Live Wall / Moderator">
+    <button type="button" class="nav-trigger-btn" id="navTriggerBtn" onclick="toggleNavDropdown(event)" title="Switch View: Photobooth / Live Wall / Moderator">
       <div class="nav-icon-badge">
         <i class="fa-solid fa-compass"></i>
         <span class="nav-pulse-beacon"></span>
@@ -506,27 +510,27 @@
       <div class="nav-dropdown-header">
         <i class="fa-solid fa-layer-group"></i> SWITCH VIEW
       </div>
-      <a href="#generator" class="nav-menu-item active" data-view="generator">
+      <button type="button" class="nav-menu-item active" data-view="generator" onclick="switchAppView('generator', event)">
         <div class="nav-menu-icon"><i class="fa-solid fa-camera"></i></div>
         <div class="nav-menu-info">
           <div class="nav-menu-name">Photobooth</div>
           <div class="nav-menu-sub">Create &amp; download your badge</div>
         </div>
-      </a>
-      <a href="#wall" class="nav-menu-item" data-view="wall">
+      </button>
+      <button type="button" class="nav-menu-item" data-view="wall" onclick="switchAppView('wall', event)">
         <div class="nav-menu-icon"><i class="fa-solid fa-tv"></i></div>
         <div class="nav-menu-info">
           <div class="nav-menu-name">Live Projection Wall</div>
           <div class="nav-menu-sub">Slideshow of approved badges</div>
         </div>
-      </a>
-      <a href="#admin" class="nav-menu-item" data-view="admin">
+      </button>
+      <button type="button" class="nav-menu-item" data-view="admin" onclick="switchAppView('admin', event)">
         <div class="nav-menu-icon"><i class="fa-solid fa-shield-halved"></i></div>
         <div class="nav-menu-info">
           <div class="nav-menu-name">Moderator Console</div>
           <div class="nav-menu-sub">Review &amp; approve live feed</div>
         </div>
-      </a>
+      </button>
     </div>
   </div>
 

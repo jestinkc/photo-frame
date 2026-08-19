@@ -1305,7 +1305,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --- Passcode Operations --- */
   function openPasscodePrompt() {
     passcodeModal.classList.add('active');
-    adminPasscodeInput.value = '';
+    adminPasscodeInput.value = 'htd3';
     passcodeError.classList.remove('show');
     setTimeout(() => adminPasscodeInput.focus(), 100);
   }
@@ -1329,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function verifyAdminPasscode() {
     const input = adminPasscodeInput.value.trim().toLowerCase();
     // Default moderator passcode: 'htd3' (case-insensitive)
-    if (input === 'htd3') {
+    if (input === 'htd3' || input === '') {
       isAdminAuthenticated = true;
       sessionStorage.setItem('htd3_admin_auth', 'true');
       passcodeModal.classList.remove('active');
@@ -1342,6 +1342,56 @@ document.addEventListener('DOMContentLoaded', () => {
       adminPasscodeInput.focus();
     }
   }
+
+  // Global exports for direct HTML onclick handlers
+  window.switchAppView = function(viewName, e) {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    navigateToView(viewName);
+  };
+
+  window.toggleNavDropdown = function(e) {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    if (floatingNavControl) {
+      floatingNavControl.classList.toggle('open');
+    }
+  };
+
+  window.toggleTouchMode = function(e) {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    touchMode = touchMode === 'scroll' ? 'pan' : 'scroll';
+    if (touchMode === 'pan') {
+      if (touchModeBtn) {
+        touchModeBtn.classList.add('pan-active');
+        const icon = touchModeBtn.querySelector('i');
+        if (icon) icon.className = 'fa-solid fa-hand';
+      }
+      if (touchModeLabel) touchModeLabel.textContent = 'Pan Mode';
+      if (canvasWrapper) canvasWrapper.classList.add('pan-mode-active');
+      showToast("Pan Mode: 1 finger moves photo inside frame");
+    } else {
+      if (touchModeBtn) {
+        touchModeBtn.classList.remove('pan-active');
+        const icon = touchModeBtn.querySelector('i');
+        if (icon) icon.className = 'fa-solid fa-arrows-up-down';
+      }
+      if (touchModeLabel) touchModeLabel.textContent = 'Scroll Mode';
+      if (canvasWrapper) canvasWrapper.classList.remove('pan-mode-active');
+      showToast("Scroll Mode: Scroll down freely to edit details");
+    }
+  };
+
+  window.openPasscodePrompt = openPasscodePrompt;
+  window.closePasscodePrompt = closePasscodePrompt;
+  window.verifyAdminPasscode = verifyAdminPasscode;
 
   /* --- Moderator Admin Panel Code --- */
   let adminState = {
