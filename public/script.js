@@ -1188,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const liveUrlDisplay = document.getElementById('liveUrlDisplay');
 
   // State Variables for SPA
-  let isAdminAuthenticated = false;
+  let isAdminAuthenticated = sessionStorage.getItem('htd3_admin_auth') === 'true';
   let adminInterval = null;
   let wallInterval = null;
   let slideTimer = null;
@@ -1199,43 +1199,76 @@ document.addEventListener('DOMContentLoaded', () => {
   const wallRotationInterval = 7000;
 
   // Floating compass navigation toggle click
-  navTriggerBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    floatingNavControl.classList.toggle('open');
-  });
+  const navMenuDropdown = document.getElementById('navMenuDropdown');
+  
+  if (navTriggerBtn) {
+    navTriggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      floatingNavControl.classList.toggle('open');
+    });
+  }
+
+  if (navMenuDropdown) {
+    navMenuDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
 
   document.addEventListener('click', () => {
-    floatingNavControl.classList.remove('open');
+    if (floatingNavControl) floatingNavControl.classList.remove('open');
   });
 
-  // Hash Router
-  function handleRoute() {
-    const hash = window.location.hash || '#generator';
-    
-    // Remove open states
-    floatingNavControl.classList.remove('open');
-
-    // Close camera if active
+  // Direct Unified View Navigator Helper
+  function navigateToView(viewName) {
+    if (floatingNavControl) floatingNavControl.classList.remove('open');
     if (typeof stopCamera === 'function') stopCamera();
 
-    if (hash === '#admin') {
+    if (viewName === 'admin') {
       if (isAdminAuthenticated) {
+        if (window.location.hash !== '#admin') window.location.hash = '#admin';
         switchView('admin');
       } else {
-        // Show passcode prompt
         openPasscodePrompt();
       }
-    } else if (hash === '#wall') {
+    } else if (viewName === 'wall') {
+      if (window.location.hash !== '#wall') window.location.hash = '#wall';
       switchView('wall');
     } else {
-      // Default to generator
+      if (window.location.hash !== '#generator') window.location.hash = '#generator';
       switchView('generator');
     }
   }
 
+  // Bind all Top Navigation chips
+  const topNavChips = document.querySelectorAll('.top-nav-chip');
+  topNavChips.forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = chip.getAttribute('data-view') || 'generator';
+      navigateToView(view);
+    });
+  });
+
+  // Bind all Floating Navigation menu items
+  navMenuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = item.getAttribute('data-view') || 'generator';
+      navigateToView(view);
+    });
+  });
+
+  // Hash Router for direct URL access & history
+  function handleRoute() {
+    const hash = window.location.hash || '#generator';
+    const viewName = hash.replace(/^#/, '');
+    navigateToView(viewName);
+  }
+
   window.addEventListener('hashchange', handleRoute);
   
-  // Trigger router on load
+  // Trigger router on initial load
   handleRoute();
 
   // Switch Active View Panel helper
@@ -1245,7 +1278,6 @@ document.addEventListener('DOMContentLoaded', () => {
     navMenuItems.forEach(item => item.classList.remove('active'));
 
     // Sync top navigation chips
-    const topNavChips = document.querySelectorAll('.top-nav-chip');
     topNavChips.forEach(chip => chip.classList.remove('active'));
     const activeTopNav = document.querySelector(`.top-nav-chip[data-view="${viewName}"]`);
     if (activeTopNav) activeTopNav.classList.add('active');
@@ -1275,14 +1307,15 @@ document.addEventListener('DOMContentLoaded', () => {
     passcodeModal.classList.add('active');
     adminPasscodeInput.value = '';
     passcodeError.classList.remove('show');
-    adminPasscodeInput.focus();
+    setTimeout(() => adminPasscodeInput.focus(), 100);
   }
 
   function closePasscodePrompt() {
     passcodeModal.classList.remove('active');
     // If not authenticated, force hash back to generator
     if (!isAdminAuthenticated) {
-      window.location.hash = '#generator';
+      if (window.location.hash !== '#generator') window.location.hash = '#generator';
+      switchView('generator');
     }
   }
 
@@ -1294,11 +1327,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function verifyAdminPasscode() {
-    const input = adminPasscodeInput.value.trim();
-    // Default moderator passcode
+    const input = adminPasscodeInput.value.trim().toLowerCase();
+    // Default moderator passcode: 'htd3' (case-insensitive)
     if (input === 'htd3') {
       isAdminAuthenticated = true;
+      sessionStorage.setItem('htd3_admin_auth', 'true');
       passcodeModal.classList.remove('active');
+      if (window.location.hash !== '#admin') window.location.hash = '#admin';
       switchView('admin');
       showToast("Access Unlocked. Moderator session active.");
     } else {
